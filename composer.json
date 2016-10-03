@@ -1,0 +1,7 @@
+{
+  "name": "common-ant-buildlibs/debpkg-git",
+  "require-dev":
+  {
+    "common-ant-buildlibs/git": "dev-master"
+  }
+}

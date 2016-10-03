@@ -1,0 +1,165 @@
+
+<project>
+
+  <!-- **************************************************** -->
+  <!-- Installs Debian package by given filename -->
+  <!-- **************************************************** -->
+  <macrodef name="common-debpkg-install">
+    <attribute name="filename" />
+    <sequential>
+      <exec executable="sudo" failonerror="true">
+        <arg line="dpkg -i @{filename}" />
+      </exec>
+    </sequential>
+  </macrodef>
+
+
+
+  <!-- **************************************************** -->
+  <!-- Removes package from repository -->
+  <!-- **************************************************** -->
+  <macrodef name="common-debpkg-remove_from_repository">
+
+    <attribute name="fullname" />
+    <attribute name="repopath" />
+    <attribute name="reponame" />
+    <attribute name="distribution" />
+    <attribute name="architecture" default="UNSET" />
+
+    <sequential>
+
+      <local name="_architecture_arg" />
+      <condition property="_architecture_arg" value="" else="--architecture @{architecture}">
+        <equals arg1="@{architecture}" arg2="UNSET" />
+      </condition>
+
+      <echo message="Removing deb package [@{architecture}] [@{fullname}]" />
+      <exec executable="sudo" failonerror="true">
+        <arg value="/usr/bin/reprepro" />
+        <arg value="--verbose" />
+        <arg line="--waitforlock 30" />
+        <arg line="--basedir @{repopath}/@{reponame}" />
+        <arg line="${_architecture_arg}" />
+        <arg value="remove" />
+        <arg value="@{distribution}" />
+        <arg value="@{fullname}" />
+      </exec>
+
+    </sequential>
+  </macrodef>
+
+
+
+  <!-- **************************************************** -->
+  <!-- Adds package to repository -->
+  <!-- **************************************************** -->
+  <macrodef name="common-debpkg-add_to_repository">
+
+    <attribute name="filename" />
+    <attribute name="repopath" />
+    <attribute name="reponame" />
+    <attribute name="distribution" />
+    <attribute name="architecture" default="UNSET" />
+
+    <sequential>
+
+      <local name="_architecture_arg" />
+      <condition property="_architecture_arg" value="" else="--architecture @{architecture}">
+        <equals arg1="@{architecture}" arg2="UNSET" />
+      </condition>
+
+      <echo message="Adding deb file [@{architecture}] [@{filename}]" />
+      <exec executable="sudo" failonerror="true">
+        <arg value="/usr/bin/reprepro"/>
+        <arg value="--verbose" />
+        <arg line="--waitforlock 30" />
+        <arg line="--basedir @{repopath}/@{reponame}" />
+        <arg line="${_architecture_arg}" />
+        <arg value="includedeb" />
+        <arg value="@{distribution}" />
+        <arg value="@{filename}" />
+      </exec>
+
+    </sequential>
+  </macrodef>
+
+
+
+  <!-- **************************************************** -->
+  <!-- Updates package on repository (Removes and adds the package) -->
+  <!-- **************************************************** -->
+  <macrodef name="common-debpkg-updaterepository">
+
+    <attribute name="fullname" />
+    <attribute name="filename" />
+    <attribute name="repopath" />
+    <attribute name="reponame" />
+    <attribute name="distribution" />
+    <attribute name="architecture" default="UNSET" />
+
+    <sequential>
+
+      <local name="_architecture_arg" />
+      <condition property="_architecture_arg" value="" else="--architecture @{architecture}">
+        <equals arg1="@{architecture}" arg2="UNSET" />
+      </condition>
+
+      <!-- Remove previous package -->
+      <echo message="Removing deb package [@{architecture}] [@{fullname}]" />
+      <exec executable="sudo" failonerror="true">
+        <arg value="/usr/bin/reprepro" />
+        <arg value="--verbose" />
+        <arg line="--waitforlock 30" />
+        <arg line="--basedir @{repopath}/@{reponame}" />
+        <arg line="${_architecture_arg}" />
+        <arg value="remove" />
+        <arg value="@{distribution}" />
+        <arg value="@{fullname}" />
+      </exec>
+
+      <!-- Add new deb file -->
+      <echo message="Adding deb file [@{architecture}] [@{filename}]" />
+      <exec executable="sudo" failonerror="true">
+        <arg value="/usr/bin/reprepro"/>
+        <arg value="--verbose" />
+        <arg line="--waitforlock 30" />
+        <arg line="--basedir @{repopath}/@{reponame}" />
+        <arg line="${_architecture_arg}" />
+        <arg value="includedeb" />
+        <arg value="@{distribution}" />
+        <arg value="@{filename}" />
+      </exec>
+
+    </sequential>
+  </macrodef>
+
+
+
+  <!-- ********************************************************* -->
+  <!-- Defines the names of the packages -->
+  <!-- ********************************************************* -->
+  <target name="common-debpkg-definenames" depends="common-git-revision">
+    <property name="package.version" value="${package.majorversion}.${git.revision}" />
+    <echo>Version: ${package.version}</echo>
+
+    <!-- <foo>_<VersionUpstream>-<DebianRevisionNumber>_<DebianArchitecture>.deb -->
+    <property name="package.fullname" value="${package.name}" />
+    <property name="package.fullname_dev" value="${package.fullname}-dev" />
+    <property name="package.filename" value="${package.fullname}_${package.version}-1_all.deb" />
+    <property name="package.filename_dev" value="${package.fullname_dev}_${package.version}-1_all.deb" />
+    <property name="package.filename_amd64" value="${package.fullname}_${package.version}-1_amd64.deb" />
+    <property name="package.filename_dev_amd64" value="${package.fullname_dev}_${package.version}-1_amd64.deb" />
+    <echo>Package fullname: ${package.fullname}</echo>
+
+    <!-- <foo_versioned>_<VersionUpstream>-<DebianRevisionNumber>_<DebianArchitecture>.deb -->
+    <property name="package.fullname_versioned" value="${package.name}-${package.majorversion}" />
+    <property name="package.fullname_versioned_dev" value="${package.fullname_versioned}-dev" />
+    <property name="package.filename_versioned" value="${package.fullname_versioned}_${package.version}-1_all.deb" />
+    <property name="package.filename_versioned_dev" value="${package.fullname_versioned_dev}_${package.version}-1_all.deb" />
+    <property name="package.filename_versioned_amd64" value="${package.fullname_versioned}_${package.version}-1_amd64.deb" />
+    <property name="package.filename_versioned_dev_amd64" value="${package.fullname_versioned_dev}_${package.version}-1_amd64.deb" />
+    <echo>Package fullname versioned: ${package.fullname_versioned}</echo>
+    <echo>Package fullname versioned dev: ${package.fullname_versioned_dev}</echo>
+  </target>
+
+</project>
