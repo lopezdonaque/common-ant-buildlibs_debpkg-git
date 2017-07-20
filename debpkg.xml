@@ -138,7 +138,7 @@
   <!-- ********************************************************* -->
   <!-- Defines the names of the packages -->
   <!-- ********************************************************* -->
-  <target name="common-debpkg-definenames" depends="common-git-revision">
+  <target name="common-debpkg-definenames" depends="common-git-info">
     <property name="package.version" value="${package.majorversion}.${git.revision}" />
     <echo>Version: ${package.version}</echo>
 
